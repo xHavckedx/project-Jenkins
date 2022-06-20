@@ -1,0 +1,13 @@
+version: "3"
+
+services:
+    ansible-test:
+        build:
+            context: .
+        container_name: ansible
+    ansible-test-2:
+        build:
+            context: .
+        container_name: ansible2
+        volumes:
+        - ./ansible:/data

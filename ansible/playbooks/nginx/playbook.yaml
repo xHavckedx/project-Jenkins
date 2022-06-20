@@ -2,12 +2,19 @@
 
 -   hosts: all
 
-    gather_facts: True
+    gather_facts: False
     become: True
     
     vars: {}
        
     pre_tasks:
+        -   name: Asegurarme de que la conexión ssh se establece
+            include_role: 
+                name: ssh-connection
+            
+        -   setup:
+                gather_subset:
+                  - '!all'
         -   include_tasks: "pretasks/main.yaml"
             
     tasks:

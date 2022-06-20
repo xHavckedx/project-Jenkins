@@ -1,4 +1,0 @@
-ansible_connection: ssh
-ansible_host: 54.194.204.10
-ansible_user: ubuntu
-ansible_ssh_private_key_file: /home/ubuntu/environment/curso/terraform/clave-privada.pem
