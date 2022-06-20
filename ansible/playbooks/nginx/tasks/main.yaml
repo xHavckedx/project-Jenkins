@@ -1,0 +1,98 @@
+#******
+-   name: Asegurarme que mi nginx queda instalado
+    include_tasks: "os-tasks/{{ ansible_facts['os_family'] }}/install.yaml"
+    vars:
+        paquetes:
+            nginx: "{{ user.nginx_version }}"
+    
+-   name:   Asegurarme que nginx queda configurado como debe estarlo          # CONFIGURACION
+    notify: reiniciar-servicio
+    copy:
+        src: ../templates/nginx.conf
+        dest: /etc/nginx/nginx.conf
+        mode: '0644'
+
+#******
+-   name:   Asegurarme que las apps por defecto de nginx quedan desinstaladas
+    block:
+        -   name:   Buscar condiguraciones de apps por defecto
+            find:
+                path: "/etc/nginx/sites-enabled/"
+                file_type: "link"
+            register: default_apps
+        
+        -   name:   Asegurarme que las apps por defecto de nginx quedan desinstaladas
+            file:
+                path: "{{ item.path }}"
+                state: absent
+            loop: "{{ default_apps.files }}"
+    when: install is changed
+
+                                    ###
+-   name:   Asegurarme que mi(s) app(s) quedan instaladas
+                                    ###
+    block:
+        -   name:   Asegurarme que la carpeta de despliegues existe
+            file:
+                path: /var/webapps
+                state: directory
+                
+        -   name:   Asegurarme que mi app se clona en esa carpeta
+            git:
+                repo: "{{ item.repo }}"
+                dest: "/var/webapps/{{ item.name }}"
+                #single_branch: yes
+                version: "{{ item.version }}"
+            loop: "{{ user.apps_to_deploy }}"
+        
+        -   name: >-
+                    Asegurarme que la configuración de mi app está creada en la 
+                    carpeta /etc/nginx/sites-available
+            template:
+                src: ../templates/app.conf
+                dest: "/etc/nginx/sites-available/{{ item.name }}"
+                mode: '0644'
+            loop: "{{ user.apps_to_deploy }}"
+
+        -   name: >-
+                    Asegurarme que la configuración de mi app está vinculada en la 
+                    carpeta /etc/nginx/sites-enabled
+            file:
+                src: "/etc/nginx/sites-available/{{ item.name }}"
+                path: "/etc/nginx/sites-enabled/{{ item.name }}"
+                state: link
+            loop: "{{ user.apps_to_deploy }}"
+                    
+#******
+-   name:   Asegurarme que el servicio queda configurado
+    service:
+        name: nginx
+        enabled: true
+
+#******
+-   name:   Asegurarme que los puertos quedan abiertos
+    block:
+        -   name: Averiguar el firewall en uso
+            shell: |
+                firewalld --version 1>/dev/null 2>&1
+                if [ $? == 0 ]; then
+                    echo firewalld
+                else
+                    ufw --version 1>/dev/null 2>&1
+                    if [ $? == 0 ]; then
+                        echo ufw
+                    else
+                        iptables --version 1>/dev/null 2>&1
+                        if [ $? == 0 ]; then
+                            echo iptables
+                        else
+                            echo Ninguno
+                        fi
+                    fi
+                fi
+            register: firewall_utilizado
+            changed_when: False
+        
+        -   name: Asegurarme que los puertos están abiertos en caso de ser necesario
+            include_tasks: "firewall/{{ firewall_utilizado.stdout }}.yaml"
+            when: "'Ninguno' not in firewall_utilizado.stdout"

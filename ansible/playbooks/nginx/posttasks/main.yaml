@@ -1,0 +1,57 @@
+-   name:   Asegurarme que el servicio quede arrancado
+    service:
+        name: nginx
+        state:  started
+    
+-   name:   Pruebas
+    block:
+        -   name:   Probar nginx
+            block:
+                -   name: Ver cuantos procesos con nginx esta corriendo
+                    shell:
+                        cmd: "ps -eaf | grep -c nginx"
+                    changed_when: False
+                    register: proceso
+                    # Ver si el proceso está corriendo
+                -   name: Comprobar que hay más de uno
+                    fail:
+                        msg: Nginx no está corriendo
+                    when: ( proceso.stdout | trim ) < 2
+
+                 # Ver si el puerto está abierto
+                -   name: Comprobar puerto
+                    wait_for:
+                        host: "{{ item.serverName }}"
+                        port: "{{ item.port }}"
+                        state: started
+                        
+                    loop: "{{ user.apps_to_deploy }}"
+                    
+                        
+        -   name: Comprobar aplciaciones
+            uri:
+                url: "http://{{ item.serverName }}:{{ item.port }}/"
+                status_code: 200
+                return_content: True
+            register: llamada
+            loop: "{{ user.apps_to_deploy }}"
+
+        # llamada por http://app1.prod:81
+        -   name: Comprobar aplciaciones
+            uri:
+                url: "http://{{ item.serverName }}:{{ item.port }}/"
+                status_code: 200
+                return_content: True
+            register: llamada
+            loop: "{{ user.apps_to_deploy }}"
+            delegate_to: localhost
+
+
+# Pruebas: Prueba unitaria
+# Cuando apruebo algo, si falla, quiero saber que falla?
+
+
+# wait_for. <. telnet puerto
+# shell ps
+
+# uri

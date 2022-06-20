@@ -1,0 +1,15 @@
+nginx_version: 1.14.0
+
+apps_to_deploy:
+    -   name: app1
+        repo: https://github.com/IvanciniGT/webEjemploAnsible
+        version: master
+        port: 80
+        serverName: 54.194.204.10
+        test:
+            endpoint: index.html
+            status_code: 200
+            test_content: "algun texto que se devuelva al hacer esa peticion"
+    #app1:
+    #    repo: https://github.com/ansible/ansible-examples.git
+    #    version: master

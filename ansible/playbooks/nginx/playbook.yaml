@@ -1,0 +1,20 @@
+# Dejar un servidor nginx funcionando en un entorno
+
+-   hosts: all
+
+    gather_facts: True
+    become: True
+    
+    vars: {}
+       
+    pre_tasks:
+        -   include_tasks: "pretasks/main.yaml"
+            
+    tasks:
+        -   include_tasks: "tasks/main.yaml"
+
+    post_tasks:
+        -   include_tasks: "posttasks/main.yaml"
+
+    handlers:
+        -   import_tasks: "handlers/main.yaml"
